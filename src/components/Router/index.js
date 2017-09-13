@@ -11,6 +11,9 @@ import { createComponentList } from './StepComponentMap'
 
 const history = createHistory()
 
+const singleDeviceComponents = ({documentType, options:{steps}}) =>
+  createComponentList(steps, documentType)
+
 
 const Router = (props) => {
   return (
@@ -47,10 +50,11 @@ class MobileRouter extends Component {
   }
 
   render = (props) => {
+    const componentsList = singleDeviceComponents(props)
     props.options.token = this.state.token
-    props.options.steps = this.state.steps
+    const routerProps = {componentsList, step: this.state.step, ...props}
     return (
-      this.state.token ? <StepsRouter {...props} step={this.state.step}/> : <p>LOADING</p>
+      this.state.token ? <LinearRouter {...routerProps}/> : <p>LOADING</p>
     )
   }
 }
@@ -67,6 +71,7 @@ class DesktopRouter extends Component {
     }
     this.state.socket.on('joined', this.setRoomId)
     this.state.socket.on('get config', this.sendConfig)
+    this.state.socket.on('disconnect', this.mobileDisconnected)
     this.state.socket.emit('join', {})
   }
 
@@ -83,26 +88,36 @@ class DesktopRouter extends Component {
     this.setState({mobileConnected: true})
   }
 
+  mobileDisconnected = () => {
+    this.setState({mobileConnected: false})
+  }
+
   onStepChange = (step) => {
     this.setState({step})
   }
 
   render = (props) => {
     const mobileUrl = `https://localhost:8080/${this.state.roomId}?mobileFlow=true`
+    const componentsList = singleDeviceComponents(props)
+    const routerProps = {componentsList, onStepChange: this.onStepChange, mobileUrl,
+      step: this.state.step, ...props}
     return (
-      this.state.mobileConnected ? <p>Mobile connected</p> :
-        <StepsRouter {...props} onStepChange={this.onStepChange} mobileUrl={mobileUrl}/>
+      this.state.mobileConnected ? <p>Mobile connected</p> : <LinearRouter {...routerProps}/>
     )
   }
 }
 
+// class DesktopToMobileRouter extends Component {
 
-class StepsRouter extends Component {
+// }
+
+
+class LinearRouter extends Component {
   constructor(props) {
     super(props)
     this.state = {
       step: this.props.step || 0,
-      componentsList: this.createComponentListFromProps(this.props),
+      componentsList: this.props.componentsList,
     }
     this.unlisten = history.listen(({state = this.initialState}) => {
       this.setState(state)
@@ -143,8 +158,8 @@ class StepsRouter extends Component {
   currentComponent = () => this.state.componentsList[this.state.step]
 
   componentWillReceiveProps(nextProps) {
-    const componentsList = this.createComponentListFromProps(nextProps)
-    this.setState({componentsList})
+    const {step, componentsList} = nextProps
+    this.setState({step, componentsList})
   }
 
   componentWillMount () {
@@ -154,9 +169,6 @@ class StepsRouter extends Component {
   componentWillUnmount () {
     this.unlisten()
   }
-
-  createComponentListFromProps = ({documentType, options:{steps}}) =>
-    createComponentList(steps, documentType)
 
   render = ({options: {...globalUserOptions}, ...otherProps}) => {
     const componentBlob = this.currentComponent()
