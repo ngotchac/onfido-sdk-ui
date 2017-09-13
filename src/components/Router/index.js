@@ -8,6 +8,7 @@ import { unboundActions, events } from '../../core'
 import {sendScreen} from '../../Tracker'
 import {wrapArray} from '../utils/array'
 import { createComponentList } from './StepComponentMap'
+import { CrossDevice } from '../CrossDevice'
 
 const history = createHistory()
 
@@ -38,7 +39,7 @@ class MobileRouter extends Component {
 
   requestConfig = () => {
     console.log(this.state.roomId)
-    this.state.socket.emit('get config', {room: this.state.roomId})
+    this.state.socket.emit('message', {room: this.state.roomId, eventType: 'get config'})
   }
 
   setConfig = (actions) => {
@@ -50,6 +51,7 @@ class MobileRouter extends Component {
   }
 
   render = (props) => {
+    console.log('Mobile Router')
     const componentsList = singleDeviceComponents(props)
     props.options.token = this.state.token
     const routerProps = {componentsList, step: this.state.step, ...props}
@@ -67,7 +69,7 @@ class DesktopRouter extends Component {
       roomId: null,
       socket: io(process.env.DESKTOP_SYNC_URL),
       mobileConnected: false,
-      step: 0,
+      singleDeviceStep: 0,
     }
     this.state.socket.on('joined', this.setRoomId)
     this.state.socket.on('get config', this.sendConfig)
@@ -92,40 +94,49 @@ class DesktopRouter extends Component {
     this.setState({mobileConnected: false})
   }
 
-  onStepChange = (step) => {
-    this.setState({step})
+  onStepChange = (singleDeviceStep) => {
+    this.setState({singleDeviceStep})
   }
 
-  render = (props) => {
-    const mobileUrl = `https://localhost:8080/${this.state.roomId}?mobileFlow=true`
-    const componentsList = singleDeviceComponents(props)
-    const routerProps = {componentsList, onStepChange: this.onStepChange, mobileUrl,
-      step: this.state.step, ...props}
+  singleDeviceProps = () => {
+    return {
+      componentsList: singleDeviceComponents(this.props),
+      onStepChange: this.onStepChange,
+      ...this.props,
+    }
+  }
+
+  crossDeviceProps = () => {
+    return {
+      componentsList: [{component: CrossDevice}],
+      ...this.props,
+    }
+  }
+
+  render = () => {
+    console.log('Desktop Router')
+    const routerProps = this.props.crossDevice ? this.crossDeviceProps() : this.singleDeviceProps()
     return (
-      this.state.mobileConnected ? <p>Mobile connected</p> : <LinearRouter {...routerProps}/>
+      <LinearRouter {...routerProps}/>
     )
   }
 }
 
-// class DesktopToMobileRouter extends Component {
-
-// }
-
-
 class LinearRouter extends Component {
   constructor(props) {
+    console.log(props)
     super(props)
     this.state = {
-      step: this.props.step || 0,
-      componentsList: this.props.componentsList,
+      step: props.step || 0,
     }
     this.unlisten = history.listen(({state = this.initialState}) => {
+      console.log(state)
       this.setState(state)
     })
   }
 
   nextStep = () => {
-    const components = this.state.componentsList
+    const components = this.props.componentsList
     const currentStep = this.state.step
     const newStepIndex = currentStep + 1
     if (components.length === newStepIndex){
@@ -155,9 +166,11 @@ class LinearRouter extends Component {
       {...properties, ...step.options})
   }
 
-  currentComponent = () => this.state.componentsList[this.state.step]
+  currentComponent = () => this.props.componentsList[this.state.step]
 
   componentWillReceiveProps(nextProps) {
+    console.log('Next props')
+    console.log(nextProps)
     const {step, componentsList} = nextProps
     this.setState({step, componentsList})
   }
@@ -171,12 +184,17 @@ class LinearRouter extends Component {
   }
 
   render = ({options: {...globalUserOptions}, ...otherProps}) => {
+    console.log('render props')
+    console.log(this.props)
+    console.log('step')
+    console.log(this.state.step)
     const componentBlob = this.currentComponent()
     const CurrentComponent = componentBlob.component
+    const stepOptions = componentBlob.step ? componentBlob.step.options : {}
     return (
       <div>
         <CurrentComponent
-          {...{...componentBlob.step.options, ...globalUserOptions, ...otherProps}}
+          {...{...stepOptions, ...globalUserOptions, ...otherProps}}
           nextStep = {this.nextStep}
           previousStep = {this.previousStep}
           trackScreen = {this.trackScreen}/>

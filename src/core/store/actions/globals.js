@@ -6,3 +6,10 @@ export function setDocumentType(payload) {
     payload
   }
 }
+
+export function setCrossDeviceMode(payload) {
+  return {
+    type: constants.SET_CROSS_DEVICE_MODE,
+    payload
+  }
+}

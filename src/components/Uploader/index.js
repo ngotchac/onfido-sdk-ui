@@ -4,6 +4,7 @@ import theme from '../Theme/style.css'
 import style from './style.css'
 import {errors} from '../strings/errors'
 import { trackComponentAndMode } from '../../Tracker'
+import {preventDefaultOnClick} from '../utils'
 
 const UploadInstructions = ({error}) =>
   <div className={style.base}>
@@ -15,8 +16,9 @@ const UploadInstructions = ({error}) =>
 const UploadError = ({error}) =>
   error && <div className={`${style.text} ${style.error}`}>{`${error.message}. ${error.instruction}.`}</div>
 
-const UploaderPure = ({onImageSelected, error, mobileUrl}) =>
+const UploaderPure = ({onImageSelected, error, actions}) =>
   <div>
+    {<UseMobile actions={actions} />}
     <Dropzone
       onDrop={([ file ])=> {
         //removes a memory leak created by react-dropzone
@@ -29,15 +31,22 @@ const UploaderPure = ({onImageSelected, error, mobileUrl}) =>
     >
       {<UploadInstructions error={error}/>}
     </Dropzone>
-    <MobileLink mobileUrl={mobileUrl} />
   </div>
 
-class MobileLink extends Component {
+class UseMobile extends Component {
 
-  render = (props) => {
-    const mobileUrl = props.mobileUrl
+  onClick = () => {
+    this.props.actions.setCrossDeviceMode(true)
+  }
+
+  render() {
     return (
-      mobileUrl ? <p className={style.mobileUrl}>Mobile: {mobileUrl}</p> : null
+      <div className={theme.actions}>
+        <a href='#' className={`${theme.btn} ${theme["btn-primary"]}`}
+          onClick={preventDefaultOnClick(this.onClick)}>
+          Use Mobile
+        </a>
+      </div>
     )
   }
 }
