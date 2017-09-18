@@ -1,8 +1,9 @@
 GIT
   remote: git@bitbucket.org:onfido/monster.git
-  revision: 37712832fadcb89a8b0aa111b8388d82b37f7cf6
+  revision: 9d0201a5f2fb0c745a4d60bf6d09f6b09e44517a
+  branch: feature/core-from-cucumber
   specs:
-    monster (0.1.14)
+    monster (0.2.0)
       browserstack-local
       chronic
       faker
@@ -15,6 +16,7 @@ GIT
       pry-byebug
       rake
       report_builder
+      require_all
       retries
       rspec-expectations
       selenium-webdriver (= 3.4.3)
@@ -103,10 +105,11 @@ GEM
       byebug (~> 9.1)
       pry (~> 0.10)
     public_suffix (3.0.0)
-    rake (12.0.0)
-    report_builder (0.1.4)
+    rake (12.1.0)
+    report_builder (0.1.6)
       builder (~> 3.2, >= 3.2.2)
       json (>= 1.8.1)
+    require_all (1.4.0)
     rest-client (1.8.0)
       http-cookie (>= 1.0.2, < 2.0)
       mime-types (>= 1.16, < 3.0)
