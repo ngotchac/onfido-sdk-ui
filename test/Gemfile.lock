@@ -1,6 +1,6 @@
 GIT
   remote: git@bitbucket.org:onfido/monster.git
-  revision: 9d0201a5f2fb0c745a4d60bf6d09f6b09e44517a
+  revision: a3761ede45cc6e4213faf4b78b5f4757dcde6231
   branch: feature/core-from-cucumber
   specs:
     monster (0.2.0)
